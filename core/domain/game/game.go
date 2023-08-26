@@ -1,5 +1,7 @@
 package game
 
+const PlayerWorldIdentifier = "<world>"
+
 type Game struct {
 	ID               int
 	TotalKills       int
@@ -26,7 +28,7 @@ func (g *Game) RegisterKill(killer, death, reason string) {
 	}
 	g.DeathCauseRecord[reason] += 1
 
-	if killer == "<world>" {
+	if killer == PlayerWorldIdentifier {
 		g.removeKillFromPlayer(death)
 		return
 	}

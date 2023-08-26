@@ -1,64 +1,25 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"github.com/brendontj/super-ganbanzo/core/domain/records"
+	"github.com/brendontj/super-ganbanzo/internal/parser"
+	"github.com/brendontj/super-ganbanzo/internal/reader"
 	"os"
-	"sync"
-	"time"
 )
 
 func main() {
 	filePath := os.Args[1]
+	r := reader.NewLogReader(filePath, 10000)
+	dataStreamCh, closeCh := r.ReadFileByLine()
 
-	dataStream := make(chan string, 10000)
-	closeCh := make(chan struct{})
 	gr := records.NewGameRecords()
-	var wg sync.WaitGroup
-	wg.Add(2)
-	go ReadFileByLine(&wg, filePath, dataStream, closeCh)
-	go ParseFromDataStream(&wg, &gr, dataStream, closeCh)
-	wg.Wait()
+	parser.ParseFromDataStream(&gr, dataStreamCh, closeCh)
 
-	fmt.Println(gr)
+	fmt.Println(GenerateReport(gr))
 }
 
-func ReadFileByLine(wg *sync.WaitGroup, filePath string, data chan string, closeCh chan struct{}) {
-	defer wg.Done()
-	file, err := os.Open(filePath)
-	if err != nil {
-		fmt.Println(err)
-	}
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		data <- scanner.Text()
-	}
-	close(data)
-	closeCh <- struct{}{}
-	close(closeCh)
+func GenerateReport(gameRecords records.GameRecords) string {
+	
 }
 
-func ParseFromDataStream(wg *sync.WaitGroup, gr *records.GameRecords, dataStream chan string, closeCh chan struct{}) {
-	defer wg.Done()
-	//var dataBufferInMemory []string
-
-	for {
-		select {
-		case data := <-dataStream:
-			gr.ParseRecord(data)
-
-			//dataBufferInMemory = append(dataBufferInMemory, data)
-
-		case <-closeCh:
-			if len(dataStream) != 0 {
-				continue
-			}
-			//fmt.Println(dataBufferInMemory)
-			fmt.Println("Finishing program execution")
-			return
-		default:
-			time.Sleep(time.Millisecond * 50)
-		}
-	}
-}

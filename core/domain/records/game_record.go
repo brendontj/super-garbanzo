@@ -3,7 +3,6 @@ package records
 import (
 	"github.com/brendontj/super-ganbanzo/core/domain/entry"
 	"github.com/brendontj/super-ganbanzo/core/domain/game"
-	"regexp"
 	"strings"
 )
 
@@ -33,24 +32,8 @@ func (gr *GameRecords) ParseRecord(logLine string) {
 		case entry.TypeGameInit:
 			gr.StartNewGame()
 		case entry.TypeKill:
-			pattern := `:([^:]+)\s+killed`
-			re := regexp.MustCompile(pattern)
-			match := re.FindStringSubmatch(logLine)
-			killer := strings.TrimSpace(match[1])
-
-			pattern = `killed\s(.*?)\s+by`
-			re = regexp.MustCompile(pattern)
-			match = re.FindStringSubmatch(logLine)
-			death := strings.TrimSpace(match[1])
-
-			pattern = `\s([^\s]+)$`
-			re = regexp.MustCompile(pattern)
-			match = re.FindStringSubmatch(logLine)
-			reason := strings.TrimSpace(match[1])
-
-			gr.RegisterKillEntry(killer, death, reason)
-		case entry.TypeGameFinished:
-			//panic()
+			kill := entry.ParseKill(logLine)
+			gr.RegisterKillEntry(kill.Killer, kill.Killed, kill.Reason)
 		}
 	}
 }

@@ -1,11 +1,12 @@
 package entry
 
-import "errors"
+import (
+	"errors"
+)
 
 const (
-	TypeGameInit     = Type("game-start")
-	TypeKill         = Type("kill")
-	TypeGameFinished = Type("game-finished")
+	TypeGameInit = Type("game-start")
+	TypeKill     = Type("kill")
 )
 
 type Type string
@@ -16,9 +17,7 @@ func FromString(et string) (Type, error) {
 		return TypeGameInit, nil
 	case "Kill":
 		return TypeKill, nil
-	case "ShutdownGame":
-		return TypeGameFinished, nil
 	default:
-		return "", errors.New("")
+		return "", errors.New("unable to detect entry type")
 	}
 }
