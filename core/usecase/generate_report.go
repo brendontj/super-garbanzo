@@ -7,50 +7,52 @@ import (
 	"strconv"
 )
 
-type ReportGenerator interface {
-	GenerateMatchReport(gameIdx int)
-	GenerateAllMatchesReport()
-	GenerateScoreMatchReport(gameIdx int)
-	GenerateScoreReport()
-	GenerateDeathCausesMatchReport(gameIdx int)
-	GenerateDeathCausesReport()
-}
+type (
+	ReportGenerator interface {
+		GenerateMatchReport(gameIdx int) error
+		GenerateAllMatchesReport()
+		GenerateScoreMatchReport(gameIdx int) error
+		GenerateScoreReport()
+		GenerateDeathCausesMatchReport(gameIdx int) error
+		GenerateDeathCausesReport()
+	}
 
-type reportGenerator struct {
-	gameRecords records.GameRecords
-}
+	reportGenerator struct {
+		gameRecords records.GameRecords
+	}
 
-type MatchPresenter struct {
-	TotalKills int            `json:"total_kills"`
-	Players    []string       `json:"players"`
-	Kills      map[string]int `json:"kills"`
-}
+	matchPresenter struct {
+		TotalKills int            `json:"total_kills"`
+		Players    []string       `json:"players"`
+		Kills      map[string]int `json:"kills"`
+	}
+)
 
 func NewReportGenerator(gameRecords records.GameRecords) ReportGenerator {
 	return reportGenerator{gameRecords: gameRecords}
 }
 
-func (rg reportGenerator) GenerateMatchReport(gameIdx int) {
+func (rg reportGenerator) GenerateMatchReport(gameIdx int) error {
 	game, err := rg.gameRecords.GetGame(gameIdx)
 	if err != nil {
-		//Todo: Log error
-		return
+		return err
 	}
-	matchReport := make(map[string]MatchPresenter)
-	matchReport["game_"+strconv.FormatInt(int64(game.ID), 10)] = MatchPresenter{
+	matchReport := make(map[string]matchPresenter)
+	matchReport["game_"+strconv.FormatInt(int64(game.ID), 10)] = matchPresenter{
 		TotalKills: game.TotalKills,
 		Players:    game.Players(),
 		Kills:      game.Kills,
 	}
 
 	render.JSONRender(matchReport)
+	return nil
 }
 
 func (rg reportGenerator) GenerateAllMatchesReport() {
 	games := rg.gameRecords.GetGames()
-	matchReport := make(map[string]MatchPresenter)
+	matchReport := make(map[string]matchPresenter)
 	for _, g := range games {
-		matchReport["game_"+strconv.FormatInt(int64(g.ID), 10)] = MatchPresenter{
+		matchReport["game_"+strconv.FormatInt(int64(g.ID), 10)] = matchPresenter{
 			TotalKills: g.TotalKills,
 			Players:    g.Players(),
 			Kills:      g.Kills,
@@ -60,17 +62,17 @@ func (rg reportGenerator) GenerateAllMatchesReport() {
 	render.JSONRender(matchReport)
 }
 
-func (rg reportGenerator) GenerateScoreMatchReport(gameIdx int) {
+func (rg reportGenerator) GenerateScoreMatchReport(gameIdx int) error {
 	game, err := rg.gameRecords.GetGame(gameIdx)
 	if err != nil {
-		//Todo: Log error
-		return
+		return err
 	}
 
 	render.ScoreTableRender(
 		sorter.SortStringToIntMapIntoASlice(game.Kills),
 		true,
 		gameIdx)
+	return nil
 }
 
 func (rg reportGenerator) GenerateScoreReport() {
@@ -80,16 +82,16 @@ func (rg reportGenerator) GenerateScoreReport() {
 		0)
 }
 
-func (rg reportGenerator) GenerateDeathCausesMatchReport(gameIdx int) {
+func (rg reportGenerator) GenerateDeathCausesMatchReport(gameIdx int) error {
 	game, err := rg.gameRecords.GetGame(gameIdx)
 	if err != nil {
-		//Todo: Log error
-		return
+		return err
 	}
 	render.DeathCausesTableRender(
 		sorter.SortStringToIntMapIntoASlice(game.DeathCauseRecord),
 		true,
 		gameIdx)
+	return nil
 }
 
 func (rg reportGenerator) GenerateDeathCausesReport() {
