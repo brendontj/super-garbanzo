@@ -21,12 +21,7 @@ func NewGame(gameIdentifier int) Game {
 
 func (g *Game) RegisterKill(killer, death, reason string) {
 	g.TotalKills += 1
-	_, exist := g.DeathCauseRecord[reason]
-	if !exist {
-		g.DeathCauseRecord[reason] = 1
-		return
-	}
-	g.DeathCauseRecord[reason] += 1
+	g.registerDeathCause(reason)
 
 	if killer == PlayerWorldIdentifier {
 		g.removeKillFromPlayer(death)
@@ -42,6 +37,15 @@ func (g *Game) Players() []string {
 		playerNames = append(playerNames, k)
 	}
 	return playerNames
+}
+
+func (g *Game) registerDeathCause(reason string) {
+	_, exist := g.DeathCauseRecord[reason]
+	if !exist {
+		g.DeathCauseRecord[reason] = 1
+		return
+	}
+	g.DeathCauseRecord[reason] += 1
 }
 
 func (g *Game) addKillToPlayer(playerName string) {
